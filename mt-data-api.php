@@ -1043,26 +1043,43 @@ class MTDataAPI
             )
         );
         if ($this->accessToken) {
-            $options['http']['header'] .= 'X-MT-Authorization: MTAuth accessToken=' . $accessToken . $eol;
+            $options['http']['header'] .= 'X-MT-Authorization: MTAuth accessToken=' . $this->accessToken . $eol;
         }
         if (count($args) > 0) {
-            $params = $args[0];
             if ($verb == 'GET') {
                 // add params to url
-                $url .= '?' . http_build_query($params);
+                $url .= '?' . http_build_query($args[0]);
             }
             else {
-                // set spscific params
+                // set method spscific params
+                $params = array();
                 if ($name == 'authenticate') {
                     $params['clientId'] = $this->clientId;
+                }
+                // set resource
+                for ($i = 0; $i < count(self::$_methods[$name]['resources']); $i++) {
+                    $params[self::$_methods[$name]['resources'][$i]] = json_encode(array_shift($args));
+                }
+                // set other params
+                if (count($args)) {
+                    $params = array_merge($params, $args[0]);
                 }
                 // create request body
                 $req_body = '';
                 $boundary = '------boundary' . sprintf("%08d", rand(0, 99999999));
                 foreach ($params as $key => $value) {
                     $req_body .= '--' . $boundary . $eol;
-                    $req_body .= 'Content-Disposition: form-data; name="' . $key . '"' . $eol . $eol;
-                    $req_body .= $value . $eol;
+                    if ($key == 'file') {
+                        $file = file_get_contents($value);
+                        $path_parts = pathinfo($value);
+                        $req_body .= 'Content-Disposition: form-data; name="file"; filename="' . $path_parts['basename']  . '"' . $eol;
+                        $req_body .= 'Content-Transfer-Encoding: binary' . $eol . $eol;
+                        $req_body .= $file . $eol;
+                    }
+                    else {
+                        $req_body .= 'Content-Disposition: form-data; name="' . $key . '"' . $eol . $eol;
+                        $req_body .= $value . $eol;
+                    }
                 }
                 $req_body .= '--' . $boundary . '--' . $eol . $eol;
                 $options['http']['header'] .= 'Content-type: multipart/form-data; boundary=' . $boundary . $eol;
@@ -1071,14 +1088,15 @@ class MTDataAPI
         }
         $response = file_get_contents($url, false, stream_context_create($options));
         $json = json_decode($response, true);
+
 /*
         //return $json;
-        print "-----Method $name\n";
+        print "\n\n-----Method $name\n";
         print "  url = $url\n";
-        if (count($args)) {
-            print "params = ";
-            print_r($params);
-        }
+//        if (count($args)) {
+//            print "params = ";
+//            print_r($params);
+//        }
         print "\noptions = ";
         print_r($options);
         print "\n";
@@ -1103,5 +1121,11 @@ $r = $api->listEntries(1);
 print_r($r);
 print "\nauthenticate";
 $r = $api->authenticate(array('username' => 'sample', 'password' => 'QBJEQBT2'));
+print_r($r);
+print "\ncreateEntry\n";
+$r = $api->createEntry(1, array('title' => 'Test Entry', 'body' => 'Test entry body'));
+print_r($r);
+print "\nuploadAsset\n";
+$r = $api->uploadAsset(array('site_id' => 1, 'path' => '/images', 'file' => 'test0.jpg'));
 print_r($r);
 ?>
