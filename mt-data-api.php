@@ -1,10 +1,15 @@
 <?php
+/*
+ * Movable Type Data API Library for PHP
+ * Version 1.00b1
+ * Copyright by H.Fujimoto
+ */
 class MTDataAPI
 {
     private $baseURL = null;
     private $clientId = null;
     private $accessToken = null;
-    private $status = null;
+    private $statusCode = null;
 
     static private $_methods = array(
         'listEndpoints' => array(
@@ -87,6 +92,16 @@ class MTDataAPI
             'resources' => null,
             'route' => '/sites/:site_id/entries/:entry_id',
             'verb' => 'DELETE'
+        ),
+        'previewEntry' => array(
+            'resources' => null,
+            'route' => '/sites/:site_id/entries/preview',
+            'verb' => 'POST'
+        ),
+        'previewEntryById' => array(
+            'resources' => null,
+            'route' => '/sites/:site_id/entries/:entry_id/preview',
+            'verb' => 'POST'
         ),
         'listCategories' => array(
             'resources' => null,
@@ -439,6 +454,16 @@ class MTDataAPI
             'route' => '/sites/:site_id/pages/:page_id/trackbacks',
             'verb' => 'GET'
         ),
+        'previewPage' => array(
+            'resources' => null,
+            'route' => '/sites/:site_id/pages/preview',
+            'verb' => 'POST'
+        ),
+        'previewPageById' => array(
+            'resources' => null,
+            'route' => '/sites/:site_id/pages/:page_id/preview',
+            'verb' => 'POST'
+        ),
         'listSites' => array(
             'resources' => null,
             'route' => '/sites',
@@ -683,6 +708,16 @@ class MTDataAPI
         'cloneTemplate' => array(
             'resources' => null,
             'route' => '/sites/:site_id/templates/:template_id/clone',
+            'verb' => 'POST'
+        ),
+        'previewTemplate' => array(
+            'resources' => null,
+            'route' => '/sites/:site_id/templates/preview',
+            'verb' => 'POST'
+        ),
+        'previewTemplateById' => array(
+            'resources' => null,
+            'route' => '/sites/:site_id/templates/:template_id/preview',
             'verb' => 'POST'
         ),
         'listTemplatemaps' => array(
@@ -1087,45 +1122,21 @@ class MTDataAPI
             }
         }
         $response = file_get_contents($url, false, stream_context_create($options));
+        preg_match('/HTTP\/1\.[0|1|x] ([0-9]{3})/', $http_response_header[0], $matches);
+        $this->statusCode = $matches[1];
         $json = json_decode($response, true);
 
-/*
-        //return $json;
-        print "\n\n-----Method $name\n";
-        print "  url = $url\n";
-//        if (count($args)) {
-//            print "params = ";
-//            print_r($params);
-//        }
-        print "\noptions = ";
-        print_r($options);
-        print "\n";
-        if (!$response) {
-            print "error";
-            return false;
-        }
-        else {
-            print_r($json);
-        }
-*/
-        if ($name == 'authenticate' && $json['accessToken']) {
+        if (($name == 'authenticate' || $name == 'getToken') && $json['accessToken']) {
             $this->accessToken = $json['accessToken'];
+        }
+        else if (($name == 'revokeAuthentication' || $name == 'revokeToken') && $this->accessToken) {
+            $this->accessToken = null;
         }
         return $json;
     }
-}
 
-$api = new MTDataAPI('http://192.168.1.122/mt6dapiplugins/mt-data-api.cgi', 'sample');
-print "listEntries\n";
-$r = $api->listEntries(1);
-print_r($r);
-print "\nauthenticate";
-$r = $api->authenticate(array('username' => 'sample', 'password' => 'QBJEQBT2'));
-print_r($r);
-print "\ncreateEntry\n";
-$r = $api->createEntry(1, array('title' => 'Test Entry', 'body' => 'Test entry body'));
-print_r($r);
-print "\nuploadAsset\n";
-$r = $api->uploadAsset(array('site_id' => 1, 'path' => '/images', 'file' => 'test0.jpg'));
-print_r($r);
+    public function getStatus() {
+        return $this->statusCode;
+    }
+}
 ?>
