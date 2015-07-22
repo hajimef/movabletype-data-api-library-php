@@ -1059,6 +1059,9 @@ class MTDataAPI
 
     public function __call($name, $args)
     {
+        if (!isset(self::$_methods[$name])) {
+            return array('error' => array('message' => 'Invalid endpoint : ' . $name));
+        }
         // replace route
         $route = self::$_methods[$name]['route'];
         preg_match_all('/(:[a-z_]+)/', $route, $m, PREG_SET_ORDER);
@@ -1073,7 +1076,7 @@ class MTDataAPI
         $options = array(
             'http' => array(
                 'ignore_errors' => true,
-                'method' => $verb,
+                'method' => $verb == 'GET' ? 'GET' : 'POST',
                 'header' => ''
             )
         );
@@ -1102,6 +1105,9 @@ class MTDataAPI
                 // create request body
                 $req_body = '';
                 $boundary = '------boundary' . sprintf("%08d", rand(0, 99999999));
+                if ($verb != 'POST') {
+                    $params['__method'] = $verb;
+                }
                 foreach ($params as $key => $value) {
                     $req_body .= '--' . $boundary . $eol;
                     if ($key == 'file') {
