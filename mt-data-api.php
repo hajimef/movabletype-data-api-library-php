@@ -1,7 +1,7 @@
 <?php
 /*
  * Movable Type Data API Library for PHP
- * Version 1.00b1
+ * Version 1.00b2
  * Copyright by H.Fujimoto
  */
 class MTDataAPI
@@ -1127,7 +1127,6 @@ class MTDataAPI
                 $options['http']['content'] = $req_body;
             }
         }
-        print_r($options);
         $response = file_get_contents($url, false, stream_context_create($options));
         preg_match('/HTTP\/1\.[0|1|x] ([0-9]{3})/', $http_response_header[0], $matches);
         $this->statusCode = $matches[1];
