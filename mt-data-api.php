@@ -1083,7 +1083,7 @@ class MTDataAPI
         if ($this->accessToken) {
             $options['http']['header'] .= 'X-MT-Authorization: MTAuth accessToken=' . $this->accessToken . $eol;
         }
-        if (count($args) > 0) {
+        if (count($args) > 0 || $verb == 'DELETE') {
             if ($verb == 'GET') {
                 // add params to url
                 $url .= '?' . http_build_query($args[0]);
@@ -1127,6 +1127,7 @@ class MTDataAPI
                 $options['http']['content'] = $req_body;
             }
         }
+        print_r($options);
         $response = file_get_contents($url, false, stream_context_create($options));
         preg_match('/HTTP\/1\.[0|1|x] ([0-9]{3})/', $http_response_header[0], $matches);
         $this->statusCode = $matches[1];
