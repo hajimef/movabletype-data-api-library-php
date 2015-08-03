@@ -1,7 +1,7 @@
 <?php
 /*
  * Movable Type Data API Library for PHP
- * Version 1.00b2
+ * Version 1.00b3
  * Copyright by H.Fujimoto
  */
 class MTDataAPI
@@ -1110,6 +1110,9 @@ class MTDataAPI
                 }
                 foreach ($params as $key => $value) {
                     $req_body .= '--' . $boundary . $eol;
+                    if ($key == 'categories') {
+                        $value = json_encode($value);
+                    }
                     if ($key == 'file') {
                         $file = file_get_contents($value);
                         $path_parts = pathinfo($value);
